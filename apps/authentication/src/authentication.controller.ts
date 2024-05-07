@@ -5,6 +5,7 @@ import {
   Post,
   UseGuards,
   Headers,
+  Param,
 } from '@nestjs/common';
 import { AuthenticationService } from './authentication.service';
 import { SignUpDto } from '../dto/signup.dto';
@@ -31,7 +32,45 @@ export class AuthenticationController {
   }
   @UseGuards(AuthenticationGuard)
   @Post('/login')
-  async login(@Body() loginDto: LoginDto): Promise<{ token: string }> {
+  async login(@Body() loginDto: LoginDto): Promise<any> {
     return await this.authenticationService.login(loginDto);
+  }
+
+  @UseGuards(AuthenticationGuard)
+  @Get('/forgot-password/:email')
+  async sendForgotPassword(@Param('email') email: string): Promise<string> {
+    try {
+      const isEmailSent =
+        await this.authenticationService.sendForgotPassword(email);
+      if (isEmailSent) {
+        return 'Email sent successfully';
+      } else {
+        return 'Email not sent';
+      }
+    } catch (error) {
+      console.log('error', error);
+      return 'Email not sent';
+    }
+  }
+
+  @Post('/reset-password')
+  async resetPassword(
+    @Body('token') token: string,
+    @Body('password') password: string,
+  ): Promise<string> {
+    try {
+      const isPasswordReset = await this.authenticationService.resetPassword(
+        token,
+        password,
+      );
+      if (isPasswordReset) {
+        return 'Password reset successfully';
+      } else {
+        return 'Password not reset';
+      }
+    } catch (error) {
+      console.log('error', error);
+      return 'Password not reset';
+    }
   }
 }
