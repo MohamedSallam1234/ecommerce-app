@@ -14,8 +14,6 @@
 import { NestFactory } from '@nestjs/core';
 import { AuthenticationModule } from './authentication.module';
 import { ValidationPipe } from '@nestjs/common';
-import { AuthenticationGuard } from './authentication.guard';
-
 async function bootstrap() {
   const app = await NestFactory.create(AuthenticationModule);
   app.useGlobalPipes(new ValidationPipe());

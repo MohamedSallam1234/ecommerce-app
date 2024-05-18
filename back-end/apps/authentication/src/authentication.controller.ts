@@ -26,19 +26,33 @@ export class AuthenticationController {
 
   @Post('/signup')
   async signUp(
-    @Body() signUpDto: SignUpDto,
+    @Headers('authorization') token: string,
+    @Body()
+    signUpDto: SignUpDto,
   ): Promise<{ user: User; token: string }> {
+    console.log('token', token);
     return await this.authenticationService.signUp(signUpDto);
   }
-  @UseGuards(AuthenticationGuard)
   @Post('/login')
-  async login(@Body() loginDto: LoginDto): Promise<any> {
+  async login(
+    @Headers('authorization') token: string,
+    @Body() loginDto: LoginDto,
+  ): Promise<any> {
+    console.log('token', token);
     return await this.authenticationService.login(loginDto);
+  }
+  @Post('/verify-email')
+  async verifyEmail(@Body('token') token: string): Promise<any> {
+    return await this.authenticationService.verifyEmail(token);
   }
 
   @UseGuards(AuthenticationGuard)
   @Get('/forgot-password/:email')
-  async sendForgotPassword(@Param('email') email: string): Promise<string> {
+  async sendForgotPassword(
+    @Headers('authorization') token: string,
+    @Param('email') email: string,
+  ): Promise<string> {
+    console.log('token', token);
     try {
       const isEmailSent =
         await this.authenticationService.sendForgotPassword(email);
@@ -55,9 +69,12 @@ export class AuthenticationController {
 
   @Post('/reset-password')
   async resetPassword(
-    @Body('token') token: string,
+    @Headers('authorization')
+    @Body('token')
+    token: string,
     @Body('password') password: string,
   ): Promise<string> {
+    console.log('token', token);
     try {
       const isPasswordReset = await this.authenticationService.resetPassword(
         token,
