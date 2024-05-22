@@ -78,7 +78,7 @@ export class AuthenticationService {
         subject: 'verify email',
         text: `You are receiving this because you (or someone else) have requested the verification of the email for your account.\n\n
                Please click on the following link, or paste this into your browser to complete the process:\n\n
-                http://localhost:3000/verify/${token}\n\n
+                http://localhost:4000/authentication/login\n\n
                 If you did not request this, please ignore this email and your account will remain inactive.\n`,
       };
       await transporter.sendMail(mailOptions);
@@ -116,7 +116,9 @@ export class AuthenticationService {
   }
 
   // login method
-  async login(loginDto: any): Promise<{ user: User }> {
+  async login(
+    loginDto: any,
+  ): Promise<{ user: User; token: string } | { message: string }> {
     const { email, password } = loginDto;
     const user = await this.userModel
       .findOne()
@@ -124,19 +126,19 @@ export class AuthenticationService {
       .equals(email)
       .exec();
     if (!user) {
-      throw new UnauthorizedException('User not found');
+      return { message: 'User not found' };
     }
     const isPasswordMatch = await bcrypt.compare(password, user.password);
     if (!isPasswordMatch) {
-      throw new UnauthorizedException('Invalid password');
+      return { message: 'Invalid password' };
     }
-    // const token = this.jwtService.sign({ email: user.email });
+    const token = this.jwtService.sign({ email: user.email });
 
     await this.producerService.produce({
       topic: 'login-user',
       messages: [{ value: JSON.stringify(user) }],
     });
-    return { user };
+    return { user, token };
   }
 
   // sendForgotPassword method
@@ -147,7 +149,7 @@ export class AuthenticationService {
       .equals(email)
       .exec();
     if (!user) {
-      throw new UnauthorizedException('User not found');
+      return { message: 'User not found' };
     }
 
     const passwordResetToken = this.jwtService.sign({ email: user.email });
@@ -172,7 +174,7 @@ export class AuthenticationService {
         subject: 'Reset Password',
         text: `You are receiving this because you (or someone else) have requested the reset of the password for your account.\n\n
              Please click on the following link, or paste this into your browser to complete the process:\n\n
-             http://localhost:3000/reset/${passwordResetToken}\n\n
+            http://localhost:4000/authentication/resetpassword\n\n
              If you did not request this, please ignore this email and your password will remain unchanged.\n`,
       };
       return await transporter.sendMail(mailOptions);

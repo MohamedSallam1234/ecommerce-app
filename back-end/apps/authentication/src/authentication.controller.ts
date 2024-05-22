@@ -6,6 +6,7 @@ import {
   UseGuards,
   Headers,
   Param,
+  Res,
 } from '@nestjs/common';
 import { AuthenticationService } from './authentication.service';
 import { SignUpDto } from '../dto/signup.dto';
@@ -33,20 +34,29 @@ export class AuthenticationController {
     console.log('token', token);
     return await this.authenticationService.signUp(signUpDto);
   }
+
   @Post('/login')
   async login(
-    @Headers('authorization') token: string,
+    @Res({ passthrough: true }) res: any,
+    @Headers('authorization') authToken: string, // Rename this to authToken
     @Body() loginDto: LoginDto,
   ): Promise<any> {
-    console.log('token', token);
-    return await this.authenticationService.login(loginDto);
+    console.log('token', authToken); // Use authToken here
+    // Cookies.set('token', authToken);
+    const result = await this.authenticationService.login(loginDto);
+    if ('user' in result) {
+      res.cookie('token', authToken, { httpOnly: true });
+      return { user: result.user };
+    } else {
+      // Handle the case where the result has a message property
+      return { message: result.message };
+    }
   }
-  @Post('/verify-email')
-  async verifyEmail(@Body('token') token: string): Promise<any> {
+  @Get('/verify/:token')
+  async verifyEmail(@Param('token') token: string): Promise<any> {
     return await this.authenticationService.verifyEmail(token);
   }
 
-  @UseGuards(AuthenticationGuard)
   @Get('/forgot-password/:email')
   async sendForgotPassword(
     @Headers('authorization') token: string,
